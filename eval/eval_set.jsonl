@@ -1,0 +1,12 @@
+{"question": "What does WHO recommend for daily sodium intake?", "type": "rag", "expected_source_contains": "sodium-reduction"}
+{"question": "What is the WHO definition of a healthy diet?", "type": "rag", "expected_source_contains": "healthy-diet"}
+{"question": "How does WHO define obesity in adults?", "type": "rag", "expected_source_contains": "obesity-and-overweight"}
+{"question": "What are WHO's recommendations on trans fat intake?", "type": "rag", "expected_source_contains": "trans-fat"}
+{"question": "What causes malnutrition according to WHO?", "type": "rag", "expected_source_contains": "malnutrition"}
+{"question": "How many calories are in a medium banana?", "type": "tool", "expected_tool": "nutrient_lookup"}
+{"question": "How much protein is in 100g of grilled chicken breast?", "type": "tool", "expected_tool": "nutrient_lookup"}
+{"question": "What does WHO say about sugar and dental health?", "type": "rag", "expected_source_contains": "sugars-and-dental-caries"}
+{"question": "What are WHO's infant feeding recommendations for the first 6 months?", "type": "rag", "expected_source_contains": "infant-and-young-child-feeding"}
+{"question": "What are common causes of anaemia per WHO?", "type": "rag", "expected_source_contains": "anaemia"}
+{"question": "How many calories are in an avocado?", "type": "tool", "expected_tool": "nutrient_lookup"}
+{"question": "What does WHO say about food additive safety?", "type": "rag", "expected_source_contains": "food-additives"}

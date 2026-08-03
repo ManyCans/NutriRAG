@@ -1,0 +1,13 @@
+# Keep scraped raw source text out of version control (licensing caution)
+data/raw/*/*.json
+data/chroma/
+data/processed/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
+
+# OS
+.DS_Store
