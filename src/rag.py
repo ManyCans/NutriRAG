@@ -39,14 +39,12 @@ def build_context(hits: list[dict]) -> str:
 
 SYSTEM_PROMPT = """You are a nutrition information assistant. Answer using ONLY
 the provided context from public health sources (WHO, USDA). Always:
-- Cite which source each claim comes from
-- Frame answers as "guidelines/evidence indicate X," never as personalized
-  medical or dietary advice
+- Provide answer in professional manner
 - If the context doesn't contain the answer, say so plainly instead of guessing
 """
 
 
-def answer_query(query: str, llm_call_fn, k: int = 4) -> dict:
+def answer_query(query: str, llm_call_fn, k: int = 3, chat_history:list=[]) -> dict:
     """
     llm_call_fn: a function(system_prompt, user_prompt) -> str, wrapping
     whichever model client you're using (Anthropic API, etc.)
@@ -54,7 +52,7 @@ def answer_query(query: str, llm_call_fn, k: int = 4) -> dict:
     hits = retrieve(query, k=k)
     context = build_context(hits)
     user_prompt = f"Context:\n{context}\n\nQuestion: {query}"
-    answer = llm_call_fn(SYSTEM_PROMPT, user_prompt)
+    answer = llm_call_fn(SYSTEM_PROMPT, user_prompt,chat_history)
     return {
         "answer": answer,
         "sources": [h["metadata"]["url"] for h in hits],

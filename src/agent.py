@@ -83,11 +83,12 @@ llm_client = Groq(
     api_key=os.environ.get("GROQ_API_KEY"),
 )
 
-def llm_caller(system_query:str, input_query:str):
+def llm_caller(system_query:str, input_query:str,chat_history:list):
     chat_completion = llm_client.chat.completions.create(
-        messages=[
-            {"role": "system","content": system_query,},
-            {"role": "user","content": input_query,}
+        messages = [
+            {"role": "system", "content": system_query},
+            *chat_history[-3:-1],
+            {"role": "user", "content": input_query}
         ],
         model="llama-3.3-70b-versatile",
     )
