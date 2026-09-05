@@ -1,10 +1,21 @@
 """
 Retrieval + generation over the nutrition document collection.
+
+CHANGES vs your original rag.py (marked with # >> ):
+  - import traced, new_request_id from src.observability
+  - @traced("retrieve") on retrieve()
+  - @traced("build_context") on build_context()
+  - new_request_id() called once at the top of answer_query()
+  - llm_call_fn call wrapped in its own manual timing block, since it's the
+    one that also needs cost logging (that happens inside llm_caller in
+    agent.py — see agent_patched.py)
 """
 from pathlib import Path
 
 import chromadb
 from chromadb.utils import embedding_functions
+
+from src.observability import traced, new_request_id  # >> added
 
 CHROMA_DIR = Path(__file__).parent.parent / "data" / "chroma"
 COLLECTION_NAME = "nutrition_docs"
@@ -18,6 +29,7 @@ _collection = _client.get_or_create_collection(
 )
 
 
+@traced("retrieve")  # >> added
 def retrieve(query: str, k: int = 4) -> list[dict]:
     """Return top-k chunks with their metadata for a query."""
     results = _collection.query(query_texts=[query], n_results=k)
@@ -29,6 +41,7 @@ def retrieve(query: str, k: int = 4) -> list[dict]:
     return hits
 
 
+@traced("build_context")  # >> added
 def build_context(hits: list[dict]) -> str:
     """Format retrieved chunks into a context block with source attribution."""
     parts = []
@@ -44,15 +57,15 @@ the provided context from public health sources (WHO, USDA). Always:
 """
 
 
-def answer_query(query: str, llm_call_fn, k: int = 3, chat_history:list=[]) -> dict:
+def answer_query(query: str, llm_call_fn, k: int = 3, chat_history: list = []) -> dict:
     """
-    llm_call_fn: a function(system_prompt, user_prompt) -> str, wrapping
-    whichever model client you're using (Anthropic API, etc.)
+    llm_call_fn: a function(system_prompt, user_prompt, chat_history) -> str
     """
+    new_request_id()  # >> added: ties retrieve/build_context/llm spans together
     hits = retrieve(query, k=k)
     context = build_context(hits)
     user_prompt = f"Context:\n{context}\n\nQuestion: {query}"
-    answer = llm_call_fn(SYSTEM_PROMPT, user_prompt,chat_history)
+    answer = llm_call_fn(SYSTEM_PROMPT, user_prompt, chat_history)
     return {
         "answer": answer,
         "sources": [h["metadata"]["url"] for h in hits],

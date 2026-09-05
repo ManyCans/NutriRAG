@@ -1,0 +1,45 @@
+name: NutriRAG Eval Gate
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run golden eval with regression gate
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          FDC_API_KEY: ${{ secrets.FDC_API_KEY }}
+        run: python eval/run_eval.py --gate
+
+      - name: Upload eval report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-report
+          path: eval/eval_report.json
+
+      # Commit the report as the new baseline only on main, only if the
+      # gate passed (job hasn't failed by this point).
+      - name: Update baseline on main
+        if: github.ref == 'refs/heads/main' && success()
+        run: |
+          git config user.name "eval-bot"
+          git config user.email "eval-bot@users.noreply.github.com"
+          cp eval/eval_report.json eval/eval_baseline.json
+          git add eval/eval_baseline.json
+          git diff --staged --quiet || git commit -m "Update eval baseline [skip ci]"
+          git push

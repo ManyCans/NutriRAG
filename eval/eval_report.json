@@ -1,0 +1,63 @@
+{
+  "timestamp": 1788632976.414624,
+  "quality": {
+    "pass_rate": 0.6,
+    "num_questions": 5,
+    "results": [
+      {
+        "id": "q1",
+        "query": "How much protein should an average adult eat per day?",
+        "pass": true,
+        "reasoning": "The answer correctly states a protein recommendation tied to overall calories (10\u201315% of energy) and provides a specific gram range (50\u201375\u202fg) for a 2,000\u2011calorie diet."
+      },
+      {
+        "id": "q2",
+        "query": "What are the health risks of eating too much sodium?",
+        "pass": true,
+        "reasoning": "The answer correctly lists high blood pressure and cardiovascular disease as risks of excess sodium intake."
+      },
+      {
+        "id": "q3",
+        "query": "How many calories are in a banana?",
+        "pass": false,
+        "reasoning": "The answer fails to provide a specific calorie count for a standard banana."
+      },
+      {
+        "id": "q4",
+        "query": "What's the WHO recommendation for daily sugar intake?",
+        "pass": true,
+        "reasoning": "The answer correctly states the WHO recommendation of less than 10% of total energy intake for free sugars and notes the additional benefit of reducing it to 5% or less."
+      },
+      {
+        "id": "q5",
+        "query": "Is a ketogenic diet safe for long-term use?",
+        "pass": false,
+        "reasoning": "The response fails to address the question and does not provide a context\u2011dependent or consensus\u2011based answer, so it does not meet the required criteria."
+      }
+    ]
+  },
+  "performance": {
+    "latency": {
+      "retrieve": {
+        "p50_ms": 31.1,
+        "p95_ms": 312.5,
+        "count": 7
+      },
+      "build_context": {
+        "p50_ms": 0.0,
+        "p95_ms": 0.0,
+        "count": 7
+      },
+      "llm_generate": {
+        "p50_ms": 752.4,
+        "p95_ms": 877.1,
+        "count": 6
+      }
+    },
+    "cost": {
+      "total_usd": 0.0,
+      "avg_usd_per_request": 0.0,
+      "num_requests": 6
+    }
+  }
+}

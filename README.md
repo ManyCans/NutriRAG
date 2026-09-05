@@ -1,139 +1,65 @@
-# 🥗 NutriRAG — Nutrition & Diet Research Assistant
+# Integrating observability into NutriRAG
 
-NutriRAG is a **Retrieval-Augmented Generation (RAG)** application that answers nutrition and diet-related questions using trusted public health resources. The system combines **semantic search** with **Groq-powered LLM inference** to generate context-aware responses grounded in reliable nutrition documents.
+## 1. Drop in the new file
+Copy `src/observability.py` into your `src/` folder as-is. Nothing to edit.
 
-The project ingests nutrition documents, converts them into vector embeddings using **ChromaDB**, retrieves the most relevant context for a user's query, and generates accurate responses using Groq's LLM.
+## 2. Merge two small diffs
+- `src/rag_patched.py` shows the exact changes to make in your real `src/rag.py`:
+  import `traced`/`new_request_id`, add `@traced("retrieve")` and
+  `@traced("build_context")`, call `new_request_id()` once at the top of
+  `answer_query()`.
+- `src/agent_patched.py` shows the same for `llm_caller()` in `src/agent.py`:
+  add `@traced("llm_generate")`, and after the Groq call, pull
+  `chat_completion.usage` and call `log_llm_usage(...)`.
 
----
+These are small, surgical additions — nothing else in either file changes.
 
-## ✨ Features
+## 3. Run the app as normal
+`streamlit run app/streamlit_app.py` — traces now accumulate in
+`data/traces.db` (created automatically) with zero changes needed to the
+Streamlit file itself.
 
-* 📄 Ingests nutrition documents from trusted public health sources.
-* 🔍 Semantic search using **ChromaDB** vector database.
-* 🤖 Fast response generation powered by **Groq LLM**.
-* 📚 Context-aware Retrieval-Augmented Generation (RAG).
-* 🌐 Streamlit web interface for interactive question answering.
-* 📊 Evaluation pipeline for testing retrieval and response quality.
-
----
-
-## 🛠 Tech Stack
-
-* **Language:** Python
-* **LLM:** Groq
-* **Vector Database:** ChromaDB
-* **Framework:** LangChain
-* **Embeddings:** Sentence Transformers
-* **Frontend:** Streamlit
-
----
-
-## 📂 Data Sources
-
-* WHO Nutrition Fact Sheets
-* USDA Dietary Guidelines
-* USDA FoodData Central
-
-All information comes from publicly available and trusted nutrition resources.
-
----
-
-## 📁 Project Structure
-
-```text
-nutrirag/
-├── app/
-│   └── streamlit_app.py
-├── data/
-│   ├── raw/
-│   └── processed/
-├── eval/
-│   ├── eval_set.jsonl
-│   └── run_eval.py
-├── src/
-│   ├── agent.py
-│   ├── ingest.py
-│   ├── rag.py
-│   ├── scrape_who.py
-│   └── tools/
-│       ├── nutrient_lookup.py
-│       └── web_search.py
-├── requirements.txt
-└── README.md
+## 4. Check what you're getting
+```python
+from src.observability import summarize
+print(summarize())
+# {'latency': {'retrieve': {'p50_ms': 12.3, 'p95_ms': 41.0, 'count': 8}, ...},
+#  'cost': {'total_usd': 0.0021, 'avg_usd_per_request': 0.00026, 'num_requests': 8}}
 ```
 
----
+## 5. Eval harness
+- `eval/golden_set.json` — starter set of 5 questions. Expand this to 20-30
+  as you find real edge cases (ambiguous questions, questions your corpus
+  doesn't cover, adversarial phrasing).
+- `eval/run_eval.py` — runs the golden set through your real pipeline,
+  LLM-judges each answer, and writes `eval/eval_report.json` combining
+  quality + latency + cost:
+  ```
+  python eval/run_eval.py --gate
+  ```
+  First run with `--gate` writes the baseline. Every run after that compares
+  against it and exits nonzero on regression (quality drop beyond 5
+  percentage points, or latency/cost more than 1.5x baseline — tune these
+  thresholds in `check_regression()`).
 
-## ⚙️ Installation
+## 6. CI
+`.github/workflows/eval-gate.yml` runs the above on every PR and push to
+main, uploads the report as a build artifact, and auto-commits the new
+baseline on main after a passing run. Add `GROQ_API_KEY` (and `FDC_API_KEY`
+if the nutrient lookup tool gets exercised in eval) as repo secrets.
 
-```bash
-git clone <repository-url>
-cd nutrirag
+## What this gets you for interviews
+- A real answer to "how do you monitor a RAG system in production" backed
+  by actual p50/p95 numbers from your own traffic.
+- A real answer to "how do you catch quality regressions before they ship"
+  — the CI gate, not just a description of one.
+- A real cost-per-request number, which almost nobody in a portfolio
+  project can produce on demand.
 
-python -m venv venv
-
-# Windows
-venv\Scripts\activate
-
-# Linux / macOS
-source venv/bin/activate
-
-pip install -r requirements.txt
-```
-
----
-
-## 🚀 Running the Project
-
-### 1. Download WHO documents
-
-```bash
-python src/scrape_who.py
-```
-
-### 2. Build the Vector Database
-
-```bash
-python src/ingest.py
-```
-
-### 3. Launch the Streamlit App
-
-```bash
-streamlit run app/streamlit_app.py
-```
-
-### 4. Run Evaluation
-
-```bash
-python eval/run_eval.py
-```
-
----
-
-## 🔄 RAG Pipeline
-
-1. Collect nutrition documents from WHO and USDA sources.
-2. Clean and split documents into chunks.
-3. Generate embeddings for each chunk.
-4. Store embeddings in **ChromaDB**.
-5. Retrieve the most relevant chunks for a user query.
-6. Pass retrieved context to **Groq LLM**.
-7. Generate an accurate, context-aware response.
-
----
-
-## 📈 Future Improvements
-
-* Add citation highlighting for retrieved passages.
-* Support multiple embedding models.
-* Enable document uploads for custom nutrition datasets.
-* Add conversation memory.
-* Improve retrieval using reranking.
-* Deploy the application on Streamlit Cloud.
-
----
-
-## ⚠️ Disclaimer
-
-This project is intended for educational and portfolio purposes only. It provides evidence-based nutritional information from public sources and should not be considered medical or dietary advice. Always consult a qualified healthcare professional for personalized recommendations.
+## Honest gaps to disclose if asked
+- Trace storage is a single local SQLite file — fine for a portfolio
+  project, but you'd talk through what changes for multi-instance
+  production (centralized store, OpenTelemetry collector, etc.) if asked.
+- The LLM-as-judge scorer is a good starting point but is itself an LLM
+  call with its own variance — worth mentioning you'd add a human-reviewed
+  sample check periodically in a real system.
