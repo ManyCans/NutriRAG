@@ -13,7 +13,7 @@ def web_search(query: str) -> dict:
         import requests
         resp = requests.post(
             "https://api.tavily.com/search",
-            json={"api_key": TAVILY_API_KEY, "query": query, "max_results": 3},
+            json={"api_key": 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, "query": query, "max_results": 3},
         )
         return resp.json()
     """

@@ -14,7 +14,7 @@ import os
 from groq import Groq
 from dotenv import load_dotenv
 
-from src.observability import traced, log_llm_usage  # >> added
+from src.observability import traced, log_llm_usage
 
 load_dotenv()
 
@@ -23,7 +23,7 @@ llm_client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
 MODEL_NAME = "openai/gpt-oss-20b"
 
 
-@traced("llm_generate")  # >> added
+@traced("llm_generate")
 def llm_caller(system_query: str, input_query: str, chat_history: list):
     chat_completion = llm_client.chat.completions.create(
         messages=[
@@ -33,9 +33,6 @@ def llm_caller(system_query: str, input_query: str, chat_history: list):
         ],
         model=MODEL_NAME,
     )
-
-    # >> added: token + cost logging. Groq's response follows the OpenAI-
-    # compatible usage shape (prompt_tokens / completion_tokens).
     usage = getattr(chat_completion, "usage", None)
     if usage is not None:
         log_llm_usage(

@@ -107,13 +107,9 @@ def traced(span_name: str) -> Callable:
     return decorator
 
 
-# --- Cost tracking -----------------------------------------------------
-# Per-1M-token USD pricing. Verify current rates at console.groq.com/docs
-# before relying on this for anything beyond relative comparison — Groq's
-# published per-token pricing for some models has moved to
-# enterprise/contact-sales at times, so don't hardcode this into a bill.
+
 GROQ_PRICING_PER_1M = {
-    "llama-3.3-70b-versatile": {"input": 0.59, "output": 0.79},
+    "openai/gpt-oss-20b": {"input": 0.075, "output": 0.3},
 }
 
 
@@ -139,7 +135,6 @@ def get_trace_db() -> Path:
     return DB_PATH
 
 
-# --- Percentile / summary reporting ------------------------------------
 def percentile(values: list[float], p: float) -> float:
     if not values:
         return 0.0
